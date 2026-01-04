@@ -2,7 +2,7 @@
 // CloudGraph - MermaidView Component
 // ============================================
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import type { MermaidDiagrams } from '../types';
 
 interface MermaidViewProps {

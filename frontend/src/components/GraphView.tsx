@@ -2,7 +2,7 @@
 // CloudGraph - GraphView Component
 // ============================================
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import type { DependencyGraph, ResourceKind, DependencyType } from '../types';
 
 interface GraphViewProps {
