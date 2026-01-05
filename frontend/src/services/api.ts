@@ -7,67 +7,103 @@ import type { AnalysisResult, FileInput, AnalysisOptions } from '../types';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export interface AnalyzeResponse {
-    id: string;
-    status: 'completed' | 'error';
-    result?: AnalysisResult;
-    error?: string;
+  id: string;
+  status: 'completed' | 'error';
+  result?: AnalysisResult;
+  error?: string;
 }
 
 export interface ValidationResult {
-    valid: boolean;
-    errors: { file: string; line?: number; message: string }[];
-    warnings: { file: string; line?: number; message: string }[];
+  valid: boolean;
+  errors: { file: string; line?: number; message: string }[];
+  warnings: { file: string; line?: number; message: string }[];
 }
 
 /**
  * Analyze configuration files
  */
 export async function analyzeFiles(
-    files: FileInput[],
-    options: AnalysisOptions = {}
+  files: FileInput[],
+  options: AnalysisOptions = {}
 ): Promise<AnalyzeResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/analyze`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ files, options }),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ files, options }),
+  });
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Analysis failed');
-    }
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Analysis failed');
+  }
 
-    return response.json();
+  return response.json();
 }
 
 /**
  * Validate YAML files
  */
 export async function validateFiles(files: FileInput[]): Promise<ValidationResult> {
-    const response = await fetch(`${API_BASE_URL}/api/validate`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ files }),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/validate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ files }),
+  });
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Validation failed');
-    }
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Validation failed');
+  }
 
-    return response.json();
+  return response.json();
 }
 
 /**
  * Check API health
  */
 export async function checkHealth(): Promise<{ status: string; timestamp: string }> {
-    const response = await fetch(`${API_BASE_URL}/health`);
-    return response.json();
+  const response = await fetch(`${API_BASE_URL}/health`);
+  return response.json();
+}
+
+/**
+ * Git fetch result
+ */
+export interface GitFetchResult {
+  files: FileInput[];
+  errors: string[];
+  message?: string;
+  repoInfo: {
+    provider: 'github' | 'gitlab';
+    owner: string;
+    repo: string;
+    branch: string;
+    path: string;
+  };
+}
+
+/**
+ * Fetch configuration files from a Git repository
+ */
+export async function fetchFromGit(url: string, token?: string): Promise<GitFetchResult> {
+  const response = await fetch(`${API_BASE_URL}/api/git/fetch`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ url, token }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch from Git');
+  }
+
+  return response.json();
 }
 
 // Sample configurations for demo
