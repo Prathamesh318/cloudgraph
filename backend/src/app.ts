@@ -5,6 +5,7 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { analyzeRouter } from './routes/analyze';
+import gitRouter from './routes/git';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
@@ -31,6 +32,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // API Routes
 app.use('/api', analyzeRouter);
+app.use('/api/git', gitRouter);
 
 // Root endpoint
 app.get('/', (_req: Request, res: Response) => {
@@ -41,7 +43,9 @@ app.get('/', (_req: Request, res: Response) => {
         endpoints: {
             health: 'GET /health',
             analyze: 'POST /api/analyze',
-            validate: 'POST /api/validate'
+            validate: 'POST /api/validate',
+            gitFetch: 'POST /api/git/fetch',
+            gitValidate: 'GET /api/git/validate'
         }
     });
 });
