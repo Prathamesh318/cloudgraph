@@ -393,17 +393,163 @@
   overflow: auto;
 }
 
-.mermaid-tabs {
+.mermaid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.mermaid-tabs {
+  margin-bottom: 0;
+}
+
+.mermaid-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.mermaid-export-menu {
+  position: relative;
+}
+
+.mermaid-export-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--space-xs);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  min-width: 140px;
+  z-index: 20;
+}
+
+.mermaid-export-menu:hover .mermaid-export-dropdown,
+.mermaid-export-menu:focus-within .mermaid-export-dropdown {
+  display: block;
+}
+
+.mermaid-export-dropdown button {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.mermaid-export-dropdown button:hover {
+  background-color: var(--bg-hover);
 }
 
 .mermaid-diagram {
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: var(--space-lg);
   background-color: var(--bg-primary);
   border-radius: var(--radius-md);
   min-height: 400px;
+  overflow: auto;
+}
+
+.mermaid-svg-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid-svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-code {
+  margin: 0;
+  padding: var(--space-lg);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  overflow: auto;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.mermaid-code code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mermaid-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--text-secondary);
+}
+
+.mermaid-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--bg-tertiary);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.mermaid-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--status-error);
+  text-align: center;
+}
+
+.mermaid-error code {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  max-width: 400px;
+  word-break: break-word;
+}
+
+.mermaid-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.mermaid-tip {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.mermaid-tip a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+}
+
+.mermaid-tip a:hover {
+  text-decoration: underline;
 }
 
 /* Footer */
