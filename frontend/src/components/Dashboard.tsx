@@ -33,6 +33,7 @@ const RESOURCE_COLORS: Partial<Record<ResourceKind, string>> = {
 
 export const Dashboard: React.FC<DashboardProps> = ({ result, files }) => {
     const [activeTab, setActiveTab] = useState<Tab>('graph');
+    const [selectedFile, setSelectedFile] = useState<FileInput | null>(null);
 
     const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
         {
@@ -107,6 +108,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, files }) => {
         }
     };
 
+    const handleCopyContent = async () => {
+        if (selectedFile) {
+            await navigator.clipboard.writeText(selectedFile.content);
+        }
+    };
+
     return (
         <div className="dashboard">
             <aside className="sidebar">
@@ -114,12 +121,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, files }) => {
                     <h3 className="sidebar-title">Files</h3>
                     <ul className="file-list">
                         {files.map((file, index) => (
-                            <li key={index} className="file-item">
+                            <li
+                                key={index}
+                                className="file-item file-item-clickable"
+                                onClick={() => setSelectedFile(file)}
+                                title="Click to view file content"
+                            >
                                 <svg className="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                     <polyline points="14 2 14 8 20 8" />
                                 </svg>
                                 <span className="file-name">{file.name}</span>
+                                <svg className="file-view-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
                             </li>
                         ))}
                     </ul>
@@ -180,6 +196,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, files }) => {
 
                 {renderContent()}
             </div>
+
+            {/* File Content Viewer Modal */}
+            {selectedFile && (
+                <div className="file-modal-overlay" onClick={() => setSelectedFile(null)}>
+                    <div className="file-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="file-modal-header">
+                            <h3 className="file-modal-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                {selectedFile.name}
+                            </h3>
+                            <div className="file-modal-actions">
+                                <button className="btn btn-ghost btn-sm" onClick={handleCopyContent} title="Copy content">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg>
+                                    Copy
+                                </button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedFile(null)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                        <div className="file-modal-content">
+                            <pre className="file-content-code">
+                                <code>{selectedFile.content}</code>
+                            </pre>
+                        </div>
+                        <div className="file-modal-footer">
+                            <span className="file-modal-info">
+                                {selectedFile.content.split('\n').length} lines • {(selectedFile.content.length / 1024).toFixed(1)} KB
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
