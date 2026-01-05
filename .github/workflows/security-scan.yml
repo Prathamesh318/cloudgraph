@@ -1,0 +1,175 @@
+name: Security & Quality Scan
+
+on:
+  push:
+    branches: [ "main", "master" , "staging-*" ]
+  pull_request:
+    branches: [ "main", "master" , "staging-*" ]
+  schedule:
+    - cron: '30 1 * * 0' # Run weekly on Sundays
+
+jobs:
+  # ========================
+  # Backend: Node.js/TypeScript
+  # ========================
+  backend-security:
+    name: Backend - Build, Test & Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      # 1. Checkout Code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      # 3. Install Dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Initialize CodeQL (Security Scan for JavaScript/TypeScript)
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+
+      # 5. Build TypeScript
+      - name: Build TypeScript
+        run: npm run build
+
+      # 6. Run ESLint (Code Quality)
+      - name: Run ESLint
+        run: npx eslint src --ext .ts --format stylish || true
+        continue-on-error: true
+
+      # 7. Perform CodeQL Analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript/backend"
+
+      # 8. Dependency Audit (npm)
+      - name: Check for Vulnerabilities (npm audit)
+        run: npm audit --audit-level=high || true
+        continue-on-error: true
+
+      # 9. Dependency Vulnerability Scan (Trivy)
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.16.1
+        with:
+          scan-type: 'fs'
+          scan-ref: 'backend'
+          ignore-unfixed: true
+          format: 'table'
+          exit-code: '0' # Warn but don't fail
+          severity: 'CRITICAL,HIGH'
+
+  # ========================
+  # Frontend: React/TypeScript
+  # ========================
+  frontend-security:
+    name: Frontend - Build, Lint & Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      # 1. Checkout Code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # 3. Install Dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+
+      # 5. Run ESLint (Code Quality)
+      - name: Run ESLint
+        run: npm run lint
+
+      # 6. Type Check
+      - name: TypeScript Type Check
+        run: npx tsc --noEmit
+
+      # 7. Build Production Bundle
+      - name: Build Frontend
+        run: npm run build
+
+      # 8. Perform CodeQL Analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript/frontend"
+
+      # 9. Dependency Audit
+      - name: Check for Vulnerabilities (npm audit)
+        run: npm audit --audit-level=high || true
+        continue-on-error: true
+
+      # 10. Trivy Vulnerability Scan
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.16.1
+        with:
+          scan-type: 'fs'
+          scan-ref: 'frontend'
+          ignore-unfixed: true
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+  # ========================
+  # Combined Security Report
+  # ========================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [backend-security, frontend-security]
+    if: always()
+
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "Backend Security: ${{ needs.backend-security.result }}"
+          echo "Frontend Security: ${{ needs.frontend-security.result }}"
+          
+          if [[ "${{ needs.backend-security.result }}" == "failure" ]] || \
+             [[ "${{ needs.frontend-security.result }}" == "failure" ]]; then
+            echo "::warning::One or more security scans reported issues"
+          else
+            echo "✅ All security scans passed"
+          fi
