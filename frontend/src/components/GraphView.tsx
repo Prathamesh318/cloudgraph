@@ -46,6 +46,29 @@ const EDGE_COLORS: Record<DependencyType, string> = {
 // Layout options
 type LayoutType = 'force' | 'radial' | 'hierarchical';
 
+// Cluster colors for grouping
+const CLUSTER_COLORS = [
+    'rgba(59, 130, 246, 0.15)',   // blue
+    'rgba(16, 185, 129, 0.15)',   // green
+    'rgba(245, 158, 11, 0.15)',   // amber
+    'rgba(236, 72, 153, 0.15)',   // pink
+    'rgba(139, 92, 246, 0.15)',   // purple
+    'rgba(6, 182, 212, 0.15)',    // cyan
+    'rgba(249, 115, 22, 0.15)',   // orange
+    'rgba(34, 197, 94, 0.15)',    // emerald
+];
+
+const CLUSTER_BORDER_COLORS = [
+    'rgba(59, 130, 246, 0.5)',
+    'rgba(16, 185, 129, 0.5)',
+    'rgba(245, 158, 11, 0.5)',
+    'rgba(236, 72, 153, 0.5)',
+    'rgba(139, 92, 246, 0.5)',
+    'rgba(6, 182, 212, 0.5)',
+    'rgba(249, 115, 22, 0.5)',
+    'rgba(34, 197, 94, 0.5)',
+];
+
 interface GraphNode extends NodeObject {
     id: string;
     label: string;
@@ -76,6 +99,12 @@ export const GraphView: React.FC<GraphViewProps> = ({ graph }) => {
     const [layout, setLayout] = useState<LayoutType>('force');
     const [showLabels, setShowLabels] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
+
+    // New feature toggles
+    const [showClusters, setShowClusters] = useState(true);
+    const [showAnimation, setShowAnimation] = useState(true);
+    const animationRef = useRef<number | null>(null);
+    const particlesRef = useRef<{ linkId: string; progress: number }[]>([]);
 
     // Transform graph data to force-graph format
     const graphData = useMemo(() => {
@@ -126,6 +155,72 @@ export const GraphView: React.FC<GraphViewProps> = ({ graph }) => {
             }),
         };
     }, [graphData, searchTerm]);
+
+    // Calculate clusters from nodes
+    const clusters = useMemo(() => {
+        const clusterMap = new Map<string, GraphNode[]>();
+
+        filteredData.nodes.forEach(node => {
+            // Group by namespace (K8s) or group/network (Docker)
+            const clusterKey = node.namespace || node.group || 'default';
+            if (!clusterMap.has(clusterKey)) {
+                clusterMap.set(clusterKey, []);
+            }
+            clusterMap.get(clusterKey)!.push(node);
+        });
+
+        return Array.from(clusterMap.entries()).map(([name, nodes], index) => ({
+            name,
+            nodes,
+            color: CLUSTER_COLORS[index % CLUSTER_COLORS.length],
+            borderColor: CLUSTER_BORDER_COLORS[index % CLUSTER_BORDER_COLORS.length],
+        }));
+    }, [filteredData.nodes]);
+
+    // Initialize particles for animation
+    useEffect(() => {
+        if (showAnimation && filteredData.links.length > 0) {
+            // Create particles for each link
+            particlesRef.current = filteredData.links.map(link => ({
+                linkId: link.id,
+                progress: Math.random(), // Start at random positions
+            }));
+        } else {
+            particlesRef.current = [];
+        }
+    }, [showAnimation, filteredData.links]);
+
+    // Animation loop for particles
+    useEffect(() => {
+        if (!showAnimation) {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+                animationRef.current = null;
+            }
+            return;
+        }
+
+        const animate = () => {
+            // Update particle positions
+            particlesRef.current = particlesRef.current.map(p => ({
+                ...p,
+                progress: (p.progress + 0.005) % 1, // Move along edge
+            }));
+
+            // Trigger re-render (force graph uses internal animation)
+            // The paintLink function will read the updated particlesRef
+
+            animationRef.current = requestAnimationFrame(animate);
+        };
+
+        animationRef.current = requestAnimationFrame(animate);
+
+        return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+        };
+    }, [showAnimation]);
 
     // Apply layout
     useEffect(() => {
@@ -263,7 +358,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ graph }) => {
         ctx.globalAlpha = opacity;
         ctx.fill();
         ctx.globalAlpha = 1;
-    }, [selectedNode, graphData.nodes]);
+
+        // Draw animated particle if animation is enabled
+        if (showAnimation) {
+            const particle = particlesRef.current.find(p => p.linkId === link.id);
+            if (particle) {
+                const particleX = source.x + (target.x - source.x) * particle.progress;
+                const particleY = source.y + (target.y - source.y) * particle.progress;
+
+                // Draw glowing particle
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = link.color || '#06b6d4';
+                ctx.globalAlpha = 0.9;
+                ctx.fill();
+
+                // Outer glow
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, 7, 0, 2 * Math.PI);
+                ctx.fillStyle = link.color || '#06b6d4';
+                ctx.globalAlpha = 0.3;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+    }, [selectedNode, graphData.nodes, showAnimation]);
 
     // Export functions
     const exportPNG = async () => {
@@ -355,6 +474,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ graph }) => {
                     </svg>
                 </button>
 
+                {/* Toggle Clusters */}
+                <button
+                    className={`btn btn-ghost btn-sm ${showClusters ? 'active' : ''}`}
+                    onClick={() => setShowClusters(!showClusters)}
+                    title="Toggle Cluster Groups"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                </button>
+
+                {/* Toggle Animation */}
+                <button
+                    className={`btn btn-ghost btn-sm ${showAnimation ? 'active' : ''}`}
+                    onClick={() => setShowAnimation(!showAnimation)}
+                    title="Toggle Data Flow Animation"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+
                 {/* Export Dropdown */}
                 <div className="graph-export-menu">
                     <button className="btn btn-primary btn-sm" disabled={isExporting}>
@@ -397,6 +541,54 @@ export const GraphView: React.FC<GraphViewProps> = ({ graph }) => {
                 height={containerRef.current?.clientHeight || 600}
                 cooldownTicks={100}
                 onEngineStop={() => graphRef.current?.zoomToFit(400, 50)}
+                onRenderFramePre={(ctx, globalScale) => {
+                    // Draw cluster backgrounds if enabled
+                    if (!showClusters) return;
+
+                    clusters.forEach(cluster => {
+                        const nodesWithPos = cluster.nodes.filter(n => n.x !== undefined && n.y !== undefined);
+                        if (nodesWithPos.length < 2) return;
+
+                        // Calculate bounding box with padding
+                        const xs = nodesWithPos.map(n => n.x!);
+                        const ys = nodesWithPos.map(n => n.y!);
+                        const padding = 40;
+                        const minX = Math.min(...xs) - padding;
+                        const maxX = Math.max(...xs) + padding;
+                        const minY = Math.min(...ys) - padding;
+                        const maxY = Math.max(...ys) + padding;
+
+                        // Draw rounded rectangle background
+                        const radius = 20;
+                        ctx.beginPath();
+                        ctx.moveTo(minX + radius, minY);
+                        ctx.lineTo(maxX - radius, minY);
+                        ctx.quadraticCurveTo(maxX, minY, maxX, minY + radius);
+                        ctx.lineTo(maxX, maxY - radius);
+                        ctx.quadraticCurveTo(maxX, maxY, maxX - radius, maxY);
+                        ctx.lineTo(minX + radius, maxY);
+                        ctx.quadraticCurveTo(minX, maxY, minX, maxY - radius);
+                        ctx.lineTo(minX, minY + radius);
+                        ctx.quadraticCurveTo(minX, minY, minX + radius, minY);
+                        ctx.closePath();
+
+                        ctx.fillStyle = cluster.color;
+                        ctx.fill();
+                        ctx.strokeStyle = cluster.borderColor;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        // Draw cluster label
+                        if (globalScale > 0.3 && cluster.name !== 'default') {
+                            const fontSize = Math.max(12 / globalScale, 8);
+                            ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
+                            ctx.fillStyle = cluster.borderColor;
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'top';
+                            ctx.fillText(cluster.name, minX + 10, minY + 8);
+                        }
+                    });
+                }}
             />
 
             {/* Zoom Controls */}
@@ -521,6 +713,25 @@ export const GraphView: React.FC<GraphViewProps> = ({ graph }) => {
                         ))}
                     </div>
                 </div>
+                {showClusters && clusters.length > 1 && (
+                    <div className="graph-legend-section">
+                        <h5>Clusters</h5>
+                        <div className="graph-legend-items">
+                            {clusters.map(cluster => (
+                                <div key={cluster.name} className="graph-legend-item">
+                                    <div
+                                        className="graph-legend-color"
+                                        style={{
+                                            backgroundColor: cluster.color.replace('0.15', '0.5'),
+                                            border: `2px solid ${cluster.borderColor}`
+                                        }}
+                                    />
+                                    <span>{cluster.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Stats */}
