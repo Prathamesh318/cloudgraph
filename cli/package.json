@@ -1,0 +1,38 @@
+{
+    "name": "@cloudgraph/cli",
+    "version": "1.0.0",
+    "description": "CLI tool for CloudGraph - Container Orchestration Dependency Analyzer",
+    "main": "dist/index.js",
+    "bin": {
+        "cloudgraph": "./dist/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "ts-node src/index.ts",
+        "start": "node dist/index.js"
+    },
+    "keywords": [
+        "docker",
+        "kubernetes",
+        "compose",
+        "dependency",
+        "graph",
+        "analyzer",
+        "cli"
+    ],
+    "author": "CloudGraph",
+    "license": "MIT",
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "commander": "^11.1.0",
+        "js-yaml": "^4.1.0",
+        "ora": "^5.4.1",
+        "cli-table3": "^0.6.3"
+    },
+    "devDependencies": {
+        "@types/js-yaml": "^4.0.9",
+        "@types/node": "^20.10.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.0"
+    }
+}
