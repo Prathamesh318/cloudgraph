@@ -32,6 +32,21 @@ export const Navbar: React.FC<NavbarProps> = ({ theme, onThemeToggle, onReset })
             </div>
 
             <div className="navbar-actions">
+                <a
+                    href="#the-story"
+                    className="nav-link"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        document.getElementById('the-story')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    The Story
+                </a>
+
                 {onReset && (
                     <button className="btn btn-secondary" onClick={onReset}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

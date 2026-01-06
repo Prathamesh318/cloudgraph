@@ -2,9 +2,10 @@
 // CloudGraph - FileUpload Component
 // ============================================
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import type { FileInput } from '../types';
 import { fetchFromGit } from '../services/api';
+import emailjs from '@emailjs/browser';
 
 interface FileUploadProps {
     files: FileInput[];
@@ -28,6 +29,49 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     const [isGitFetching, setIsGitFetching] = useState(false);
     const [gitError, setGitError] = useState<string | null>(null);
     const [showGitInput, setShowGitInput] = useState(false);
+
+    // Feedback form state
+    const feedbackFormRef = useRef<HTMLFormElement>(null);
+    const [feedbackForm, setFeedbackForm] = useState({ name: '', email: '', message: '' });
+    const [isSendingFeedback, setIsSendingFeedback] = useState(false);
+    const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+    const handleFeedbackSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!feedbackForm.name || !feedbackForm.email || !feedbackForm.message) return;
+
+        setIsSendingFeedback(true);
+        setFeedbackStatus('idle');
+
+        try {
+            // EmailJS configuration from environment variables
+            const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+            const FEEDBACK_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID;
+            const AUTOREPLY_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID;
+            const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+            const templateParams = {
+                from_name: feedbackForm.name,
+                from_email: feedbackForm.email,
+                message: feedbackForm.message,
+                to_email: 'prathamv31.08@gmail.com'
+            };
+
+            // Send feedback notification to owner
+            await emailjs.send(SERVICE_ID, FEEDBACK_TEMPLATE_ID, templateParams, PUBLIC_KEY);
+
+            // Send auto-reply thank you to user
+            await emailjs.send(SERVICE_ID, AUTOREPLY_TEMPLATE_ID, templateParams, PUBLIC_KEY);
+
+            setFeedbackStatus('success');
+            setFeedbackForm({ name: '', email: '', message: '' });
+        } catch (err) {
+            console.error('EmailJS error:', err);
+            setFeedbackStatus('error');
+        } finally {
+            setIsSendingFeedback(false);
+        }
+    };
 
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -345,6 +389,207 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                         Kubernetes App
                     </button>
                 </div>
+            </div>
+
+            {/* Feature Cards */}
+            <div className="feature-cards animate-fade-in">
+                <div className="feature-card">
+                    <div className="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="6" cy="6" r="3" />
+                            <circle cx="18" cy="18" r="3" />
+                            <circle cx="18" cy="6" r="3" />
+                            <path d="M8.5 7.5L15.5 16.5M15.5 7.5L8.5 16.5" />
+                        </svg>
+                    </div>
+                    <h3>Interactive Graph</h3>
+                    <p>Visualize dependencies with a force-directed graph. Pan, zoom, and explore your infrastructure.</p>
+                </div>
+                <div className="feature-card">
+                    <div className="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <h3>Risk Detection</h3>
+                    <p>Identify single points of failure, missing health checks, and security concerns automatically.</p>
+                </div>
+                <div className="feature-card">
+                    <div className="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <path d="M3 9h18M9 21V9" />
+                        </svg>
+                    </div>
+                    <h3>Mermaid Export</h3>
+                    <p>Generate beautiful Mermaid diagrams for documentation, wikis, and presentations.</p>
+                </div>
+                <div className="feature-card">
+                    <div className="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.113.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                        </svg>
+                    </div>
+                    <h3>Git Integration</h3>
+                    <p>Fetch configs directly from GitHub or GitLab repositories. No downloads needed.</p>
+                </div>
+            </div>
+
+            {/* The Story Section */}
+            <div id="the-story" className="developer-section animate-fade-in">
+                <h2>
+                    <span className="gradient-text">The Story Behind CloudGraph</span>
+                </h2>
+                <div className="developer-story">
+                    <p>
+                        During our final year of college, me and my friends were brainstorming project ideas.
+                        We came up with this concept — a tool that could read Docker and Kubernetes config files
+                        and visually map out how all the services connect. We were excited about it, but ended up
+                        going with a different project instead. The idea, however, never really left my mind.
+                    </p>
+                    <p>
+                        I remember working on side projects back then, staring at massive YAML files, trying to
+                        figure out which container talks to which service. It was frustrating. I kept thinking —
+                        <em>"Why isn't there a simple tool that just shows me a visual map?"</em>
+                    </p>
+                    <p>
+                        Fast forward to now — I finally decided to bring that idea to life. I built
+                        <strong> CloudGraph</strong> from scratch, putting together everything I've learned
+                        over the years. You just drop your <code>docker-compose.yml</code> or Kubernetes manifests,
+                        and instantly see how your services are connected.
+                    </p>
+                    <p>
+                        No complicated setup. No manual diagram drawing. Just upload and explore your architecture.
+                    </p>
+                </div>
+
+                <div className="developer-card">
+                    <div className="developer-avatar">
+                        <span>P</span>
+                    </div>
+                    <div className="developer-info">
+                        <h3>Prathamesh Veer</h3>
+                        <p>Software Developer | Building cool things</p>
+                        <div className="developer-links">
+                            <a href="https://portfolio-exe-prathamesh.vercel.app/" target="_blank" rel="noopener noreferrer" className="dev-link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                    <polyline points="9 22 9 12 15 12 15 22" />
+                                </svg>
+                                Portfolio
+                            </a>
+                            <a href="https://linkedin.com/in/prathamesh-veer-ab25b2229/" target="_blank" rel="noopener noreferrer" className="dev-link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                                </svg>
+                                LinkedIn
+                            </a>
+                            <a href="https://github.com/Prathamesh318" target="_blank" rel="noopener noreferrer" className="dev-link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.113.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                                </svg>
+                                GitHub
+                            </a>
+                            <a href="mailto:prathamv31.08@gmail.com" className="dev-link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                    <polyline points="22,6 12,13 2,6" />
+                                </svg>
+                                Email
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Feedback Section */}
+            <div id="feedback" className="feedback-section animate-fade-in">
+                <h2>
+                    <span className="gradient-text">Share Your Thoughts</span>
+                </h2>
+                <p className="feedback-subtitle">
+                    Got a suggestion, found a bug, or just want to say hi? I'd love to hear from you!
+                </p>
+
+                <form ref={feedbackFormRef} onSubmit={handleFeedbackSubmit} className="feedback-form">
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="feedback-name">Your Name</label>
+                            <input
+                                type="text"
+                                id="feedback-name"
+                                placeholder="John Doe"
+                                value={feedbackForm.name}
+                                onChange={(e) => setFeedbackForm({ ...feedbackForm, name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="feedback-email">Your Email</label>
+                            <input
+                                type="email"
+                                id="feedback-email"
+                                placeholder="john@example.com"
+                                value={feedbackForm.email}
+                                onChange={(e) => setFeedbackForm({ ...feedbackForm, email: e.target.value })}
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="feedback-message">Your Message</label>
+                        <textarea
+                            id="feedback-message"
+                            placeholder="Share your thoughts, suggestions, or feedback..."
+                            rows={4}
+                            value={feedbackForm.message}
+                            onChange={(e) => setFeedbackForm({ ...feedbackForm, message: e.target.value })}
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="btn btn-primary btn-lg"
+                        disabled={isSendingFeedback}
+                    >
+                        {isSendingFeedback ? (
+                            <>
+                                <span className="spinner" style={{ width: '16px', height: '16px' }}></span>
+                                Sending...
+                            </>
+                        ) : (
+                            <>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                                </svg>
+                                Send Feedback
+                            </>
+                        )}
+                    </button>
+
+                    {feedbackStatus === 'success' && (
+                        <div className="feedback-message success">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                            Thank you! Your feedback has been sent. I'll get back to you soon!
+                        </div>
+                    )}
+
+                    {feedbackStatus === 'error' && (
+                        <div className="feedback-message error">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                            </svg>
+                            Oops! Something went wrong. Please try again or email me directly.
+                        </div>
+                    )}
+                </form>
             </div>
         </div>
     );
