@@ -5,7 +5,7 @@
 import { Router, Request, Response } from 'express';
 import { analyzeFiles } from '../services/analysisService';
 import { validateYaml } from '../utils/yamlParser';
-import { AnalyzeRequest, FileInput, AnalysisOptions } from '../../../shared/types';
+import { AnalyzeRequest, FileInput, AnalysisOptions } from '../types';
 
 export const analyzeRouter = Router();
 

@@ -6,25 +6,17 @@
       "ES2022"
     ],
     "outDir": "./dist",
-    "rootDir": "..",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": [
-        "../shared/*"
-      ]
-    }
+    "sourceMap": true
   },
   "include": [
-    "src/**/*",
-    "../shared/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

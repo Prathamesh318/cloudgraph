@@ -11,7 +11,7 @@ import {
     EnvVar,
     Dependency,
     DependencyType
-} from '../../../shared/types';
+} from '../types';
 
 interface DockerComposeService {
     image?: string;

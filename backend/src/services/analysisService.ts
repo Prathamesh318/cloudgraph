@@ -22,7 +22,7 @@ import {
     LogicalGroup,
     CriticalPath,
     ExternalDependency
-} from '../../../shared/types';
+} from '../types';
 import { parseYamlFiles, ParsedYamlFile } from '../utils/yamlParser';
 import { parseDockerCompose } from '../parsers/dockerComposeParser';
 import { parseKubernetesManifest } from '../parsers/kubernetesParser';

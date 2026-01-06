@@ -3,7 +3,7 @@
 // ============================================
 
 import yaml from 'js-yaml';
-import { Platform, FileInput, ValidationResult, ValidationError, ValidationWarning } from '../../../shared/types';
+import { Platform, FileInput, ValidationResult, ValidationError, ValidationWarning } from '../types';
 
 export interface ParsedYamlFile {
     fileName: string;

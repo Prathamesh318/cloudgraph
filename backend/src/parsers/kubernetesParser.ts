@@ -10,7 +10,7 @@ import {
     VolumeMount,
     EnvVar,
     Dependency
-} from '../../../shared/types';
+} from '../types';
 
 // Kubernetes API types
 interface K8sMetadata {
