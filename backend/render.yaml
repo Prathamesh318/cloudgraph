@@ -1,0 +1,19 @@
+# Render Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Backend API Service
+  - type: web
+    name: cloudgraph-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+    autoDeploy: true
