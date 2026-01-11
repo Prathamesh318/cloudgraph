@@ -552,7 +552,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ graph }) => {
                         // Calculate bounding box with padding
                         const xs = nodesWithPos.map(n => n.x!);
                         const ys = nodesWithPos.map(n => n.y!);
-                        const padding = 40;
+                        const padding = 60;
                         const minX = Math.min(...xs) - padding;
                         const maxX = Math.max(...xs) + padding;
                         const minY = Math.min(...ys) - padding;

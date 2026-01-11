@@ -266,13 +266,20 @@ function parseWorkload(
     const environment = parseK8sEnvironment(mainContainer);
 
     // Create the workload resource
+    // Include pod template labels for Service selector matching
+    const podTemplateLabels = workload.spec.template?.metadata?.labels || {};
+    const combinedLabels = {
+        ...workload.metadata.labels,
+        ...podTemplateLabels
+    };
+
     const resource: Resource = {
         id: resourceId,
         name: workload.metadata.name,
         kind,
         platform: 'kubernetes',
         namespace,
-        labels: workload.metadata.labels,
+        labels: combinedLabels,
         annotations: workload.metadata.annotations,
         metadata: {
             image: mainContainer?.image,
